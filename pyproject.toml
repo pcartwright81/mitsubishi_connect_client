@@ -1,0 +1,25 @@
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = [
+    "tests",
+]
+norecursedirs = [
+    ".git",
+    "testing_config",
+]
+
+addopts = "--cov-report=xml:coverage.xml --cov-report=term-missing --cov=mitsubishi_connect_client --cov-fail-under=100"
+
+[tool.coverage.report]
+exclude_also = [
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+    "setup.py"
+]
+
+[tool.coverage.run]
+omit = [
+    "setup.py",
+    "tests/test_live.py",
+    ]
