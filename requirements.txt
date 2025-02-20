@@ -2,3 +2,4 @@ colorlog==6.9.0
 pip>=21.3.1
 ruff==0.9.6
 aiohttp==3.11.12
+python-dateutil==2.9.0.post0
