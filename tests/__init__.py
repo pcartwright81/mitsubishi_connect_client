@@ -35,9 +35,9 @@ test_vehicle_state_response = """
                         "ts": "1678886400000"
                     },
                     "cst": "1",
-                    "tuState": "2",
-                    "ods": "3",
-                    "ignitionState": "4",
+                    "tuState": "1",
+                    "ods": "0",
+                    "ignitionState": "0",
                     "odo": [
                         {
                             "2025-02-09 15:14:49": "1223"
@@ -46,16 +46,16 @@ test_vehicle_state_response = """
                             "2025-02-10 20:54:33": "1242"
                         }
                     ],
-                    "theftAlarm": "5",
-                    "svla": "6",
-                    "svtb": "7",
-                    "diagnostic": "8",
-                    "privacy": "9",
-                    "temp": "10",
-                    "factoryReset": "11",
-                    "tuStateTS": "12",
-                    "ignitionStateTs": "13",
-                    "timezone": "America/New_York",
+                    "theftAlarm": "OFF",
+                    "svla": "0",
+                    "svtb": "0",
+                    "diagnostic": "0",
+                    "privacy": "0",
+                    "temp": "1",
+                    "factoryReset": "0",
+                    "tuStateTS": "1739934731691",
+                    "ignitionStateTs": "1739913349354",
+                    "timezone": "UTC",
                     "accessible": true,
                     "chargingControl": {
                         "cruisingRangeCombined": "200",
