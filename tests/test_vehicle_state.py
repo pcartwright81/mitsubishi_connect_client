@@ -26,9 +26,7 @@ class TestVehicleState(unittest.TestCase):
         ext_loc_map = vehicle_state.state.ext_loc_map
         self.assertEqual(ext_loc_map.lon, 123.456)
         self.assertEqual(ext_loc_map.lat, 456.789)
-        self.assertEqual(
-            ext_loc_map.ts, datetime(2023, 3, 15, 13, 20, tzinfo=UTC)
-        )
+        self.assertEqual(ext_loc_map.ts, datetime(2023, 3, 15, 13, 20, tzinfo=UTC))
 
         charging_control = vehicle_state.state.charging_control
         self.assertEqual(charging_control.cruising_range_combined, 200)
