@@ -58,3 +58,162 @@ sample_remote_operaton_response = {
     "state": "1",
     "status": "success",
 }
+
+
+sample_vehicle_status = {
+    "vhr": [
+        {
+            "cid": "a7ddec3e-575f-4ea4-9038-c1692caecac2",
+            "vin": "1234567890ABCDEFG",
+            "operation": "vehicleStatus",
+            "ts": 1739934753,
+            "dt": {
+                "diagnostic": {
+                    "breakWarn": {
+                        "name": "Brake Warning",
+                        "displayMessage": "break_good",
+                        "value": "0",
+                        "warning": False,
+                    },
+                    "odos": {
+                        "name": "Mileage Unit",
+                        "displayMessage": "odos_miles",
+                        "value": "0",
+                    },
+                    "engineOilWarn": {
+                        "name": "Engine Oil Pressure",
+                        "displayMessage": "engineOil_good",
+                        "value": "0",
+                        "warning": False,
+                    },
+                    "digsts": "1739934741242",
+                    "tireStatus": {
+                        "name": "TPMS Warning",
+                        "displayMessage": "tirepressure_adequately",
+                        "value": "0",
+                        "warning": False,
+                    },
+                    "availRange": {
+                        "name": "Available Range",
+                        "displayMessage": "availRange_miles",
+                        "value": "--",
+                    },
+                    "odo": {
+                        "name": "Mileage",
+                        "displayMessage": "odo_miles",
+                        "value": "1447",
+                    },
+                    "spd": {
+                        "name": "Vehicle Speed",
+                        "displayMessage": "vehicle_speed",
+                        "value": "0",
+                    },
+                    "igst": {
+                        "name": "IG Status",
+                        "displayMessage": "igst_off",
+                        "value": "0",
+                    },
+                },
+                "message": "SNAPSHOT",
+                "vehicleStatus": {
+                    "doorStatus": {
+                        "id": "doorStatus",
+                        "name": "Door Status",
+                        "doors": [
+                            {
+                                "position": {
+                                    "name": "Door Position",
+                                    "displayMessage": "doorFrontLeft",
+                                    "value": "0",
+                                },
+                                "state": {
+                                    "name": "Door State",
+                                    "displayMessage": "#msg_close_close",
+                                    "value": "0",
+                                },
+                            },
+                            {
+                                "position": {
+                                    "name": "Door Position",
+                                    "displayMessage": "doorHood",
+                                    "value": "1",
+                                },
+                                "state": {
+                                    "name": "Door State",
+                                    "displayMessage": "#msg_close_close",
+                                    "value": "0",
+                                },
+                            },
+                            {
+                                "position": {
+                                    "name": "Door Position",
+                                    "displayMessage": "doorFrontRight",
+                                    "value": "2",
+                                },
+                                "state": {
+                                    "name": "Door State",
+                                    "displayMessage": "#msg_close_close",
+                                    "value": "0",
+                                },
+                            },
+                            {
+                                "position": {
+                                    "name": "Door Position",
+                                    "displayMessage": "doorRearLeft",
+                                    "value": "3",
+                                },
+                                "state": {
+                                    "name": "Door State",
+                                    "displayMessage": "#msg_close_close",
+                                    "value": "0",
+                                },
+                            },
+                            {
+                                "position": {
+                                    "name": "Door Position",
+                                    "displayMessage": "doorRearRight",
+                                    "value": "4",
+                                },
+                                "state": {
+                                    "name": "Door State",
+                                    "displayMessage": "#msg_close_close",
+                                    "value": "0",
+                                },
+                            },
+                            {
+                                "position": {
+                                    "name": "Door Position",
+                                    "displayMessage": "doorTrunk",
+                                    "value": "5",
+                                },
+                                "state": {
+                                    "name": "Door State",
+                                    "displayMessage": "#msg_close_close",
+                                    "value": "0",
+                                },
+                            },
+                        ],
+                    },
+                    "lightStatus": {
+                        "id": "lightStatus",
+                        "name": "Lights Status",
+                        "lights": [
+                            {
+                                "state": {
+                                    "name": "Light State",
+                                    "displayMessage": "#msg_off_off",
+                                    "value": "3",
+                                },
+                                "position": {
+                                    "name": "Light Position",
+                                    "displayMessage": "lightHead",
+                                    "value": "0",
+                                },
+                            }
+                        ],
+                    },
+                },
+            },
+        }
+    ]
+}

@@ -5,7 +5,6 @@ import hashlib
 import hmac
 import json
 import os
-from pydoc import resolve
 from typing import Any, ClassVar
 
 import async_timeout
@@ -15,7 +14,10 @@ from mitsubishi_connect_client.remote_operation_response import RemoteOperationR
 from mitsubishi_connect_client.token_state import TokenState
 from mitsubishi_connect_client.vehicle import VechiclesResponse
 from mitsubishi_connect_client.vehicle_state import VehicleState
-from mitsubishi_connect_client.vehicle_status import VehicleStatus
+from mitsubishi_connect_client.vehicle_status import (
+    VehicleStatusResponse,
+    VhrItem,
+)
 
 
 class MitsubishiConnectClient:
@@ -81,7 +83,6 @@ class MitsubishiConnectClient:
         response = await self._api_wrapper(
             method="get",
             url=url,
-            data=None,
             headers=self.headers,
         )
         return VechiclesResponse(**response)
@@ -93,17 +94,22 @@ class MitsubishiConnectClient:
         response = await self._api_wrapper(
             method="get",
             url=url,
-            data=None,
             headers=self.headers,
         )
         return VehicleState(**response)
 
-    async def stop_engine(self, vin: str) -> RemoteOperationResponse:
-        """Stop the engine."""
+    def _get_bytes(self, data: dict[str, str]) -> bytes:
+        """Get the bytes."""
+        return json.dumps(data).replace(" ", "").encode("utf-8")
+
+    async def _remote_operation_response(
+        self, vin: str, operation: str
+    ) -> RemoteOperationResponse:
+        """Remote operation response."""
         url = f"{self._base_url}:15443/avi/v3/remoteOperation"
         data = {
             "vin": f"{vin}",
-            "operation": "engineOff",
+            "operation": f"{operation}",
             "forced": "true",
             "userAgent": "android",
         }
@@ -111,47 +117,25 @@ class MitsubishiConnectClient:
         response = await self._api_wrapper(
             method="post",
             url=url,
-            data=data,
+            data_bytes=self._get_bytes(data),
             headers=headers,
         )
         return RemoteOperationResponse(**response)
+
+    async def stop_engine(self, vin: str) -> RemoteOperationResponse:
+        """Stop the engine."""
+        operation = "engineOff"
+        return await self._remote_operation_response(vin, operation)
 
     async def flash_lights(self, vin: str) -> RemoteOperationResponse:
         """Flash the lights."""
-        url = f"{self._base_url}:15443/avi/v3/remoteOperation"
-        data = {
-            "vin": f"{vin}",
-            "operation": "lights",
-            "forced": "true",
-            "userAgent": "android",
-        }
-        headers = self._add_headers(self.headers, data)
-        response = await self._api_wrapper(
-            method="post",
-            url=url,
-            data=data,
-            headers=headers,
-        )
-        return RemoteOperationResponse(**response)
+        operation = "lights"
+        return await self._remote_operation_response(vin, operation)
 
     async def start_engine(self, vin: str) -> RemoteOperationResponse:
         """Start the engine."""
-        url = f"{self._base_url}:15443/avi/v3/remoteOperation"
-        data = {
-            "vin": f"{vin}",
-            "operation": "remoteAC",
-            "forced": "true",
-            "dt": {"pos": 1, "def": 0, "tmp": 1},
-            "userAgent": "android",
-        }
-        headers = self._add_headers(self.headers, data)
-        response = await self._api_wrapper(
-            method="post",
-            url=url,
-            data=data,
-            headers=headers,
-        )
-        return RemoteOperationResponse(**response)
+        operation = "remoteAC"
+        return await self._remote_operation_response(vin, operation)
 
     async def unlock_vehicle(self, vin: str, pin_token: str) -> RemoteOperationResponse:
         """Unlock the vehicle."""
@@ -167,7 +151,7 @@ class MitsubishiConnectClient:
         response = await self._api_wrapper(
             method="post",
             url=url,
-            data=data,
+            data_bytes=self._get_bytes(data),
             headers=headers,
         )
         return RemoteOperationResponse(**response)
@@ -184,7 +168,7 @@ class MitsubishiConnectClient:
         response = await self._api_wrapper(
             method="post",
             url=url,
-            data=data,
+            data_bytes=self._get_bytes(data),
             headers=headers,
         )
         return {
@@ -205,35 +189,33 @@ class MitsubishiConnectClient:
             "hash": f"{generated_hash}",
             "userAgent": "android",
         }
-        json_bytes = json.dumps(data).replace(" ", "").encode("utf-8")
         headers = self._add_headers(self.headers, data)
         response = await self._api_wrapper(
             method="post",
             url=url,
-            data=json_bytes,
+            data_bytes=self._get_bytes(data),
             headers=headers,
         )
         return response["pinToken"]
 
-    async def get_status(self, vin: str) -> VehicleStatus:
+    async def get_status(self, vin: str) -> VhrItem:
         """Get the vehicle status."""
         url = f"{self._base_url}:15443/avi/v1/vehicles/{vin}/vehicleStatus?count=1"
         self.headers["authorization"] = "Bearer " + self.token.access_token
         response = await self._api_wrapper(
             method="get",
             url=url,
-            data=None,
             headers=self.headers,
         )
-        return VehicleStatus(**response)
+        return VehicleStatusResponse(**response).vhr[0]
 
     def _add_headers(
         self, headers: dict[str, str], data: dict[str, str]
     ) -> dict[str, str]:
         """Add headers to the request."""
         headers["authorization"] = "Bearer " + self.token.access_token
-        json_bytes = json.dumps(data).replace(" ", "").encode("utf-8")
-        length = len(json_bytes)
+        data_bytes = self._get_bytes(data)
+        length = len(data_bytes)
         headers["content-length"] = str(length)
         return headers
 
@@ -241,25 +223,27 @@ class MitsubishiConnectClient:
         self,
         method: str,
         url: str,
-        data: Any | None = None,
         headers: dict | None = None,
+        data: Any | None = None,
+        data_bytes: bytes | None = None,
     ) -> Any:
-        try:
-            """Get information from the API."""
-            async with async_timeout.timeout(10):
-                async with (
-                    async_timeout.timeout(10),
-                    ClientSession() as session,
-                  session.request(
-                    method=method,
-                    url=url,
-                    headers=headers,
-                    json=data,
-                ) as response):
-                    return await response.json(content_type=None)
-        except Exception as exception:  # pylint: disable=broad-except  # noqa: BLE001
-            msg = f"Error - {exception}"
-            raise Exception(msg)  # noqa: B904, TRY002
+        """Get information from the API."""
+        async with (
+            async_timeout.timeout(10),
+            ClientSession() as session,
+            session.request(
+                method=method,
+                url=url,
+                headers=headers,
+                json=data,
+                data=data_bytes,
+            ) as response,
+        ):
+            if response.ok:
+                text = await response.text()
+                return json.loads(text)
+            response.raise_for_status()
+            return None
 
     def _generate_client_nonce_base64(self, length: int = 32) -> str:
         """Generate a random nonce and encodes it in Base64."""

@@ -27,7 +27,7 @@ class TestVehicleState(unittest.TestCase):
         self.assertEqual(ext_loc_map.ts, datetime(2023, 3, 15, 13, 20, tzinfo=UTC))
 
         charging_control = vehicle_state.state.charging_control
-        self.assertEqual(charging_control.cruising_range_combined, 200)
+        self.assertEqual(charging_control.cruising_range_combined, "200")
         self.assertEqual(
             charging_control.event_timestamp,
             datetime(2023, 3, 15, 13, 20, tzinfo=UTC),
