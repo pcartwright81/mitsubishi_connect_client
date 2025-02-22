@@ -1,20 +1,21 @@
 """Test the vehicle object."""
 
+import json
 import unittest
 from datetime import date
 
 from mitsubishi_connect_client.vehicle import VechiclesResponse
 
-from . import test_vehicles_response
+from . import sample_vehicle
 
 
 class TestVehiclesResponse(unittest.TestCase):
     """Test the vehicles response object."""
 
-    def test_from_text(self) -> None:
+    def test_parsing(self) -> None:
         """Test the from_text method."""
-        response_text = test_vehicles_response
-        vehicles_response = VechiclesResponse.from_text(response_text)
+        loaded = json.loads(json.dumps(sample_vehicle))
+        vehicles_response = VechiclesResponse(**loaded)
         self.assertEqual(len(vehicles_response.vehicles), 1)
         self.assertEqual(vehicles_response.vehicles[0].vin, "vin")
         vehicle = vehicles_response.vehicles[0]

@@ -1,11 +1,12 @@
 """Test the remote operation response object."""
 
+import json
 import unittest
 from uuid import UUID
 
 from mitsubishi_connect_client.remote_operation_response import RemoteOperationResponse
 
-from . import remote_operation_response_test
+from . import sample_remote_operaton_response
 
 
 class TestRemoteOperationResponse(unittest.TestCase):
@@ -13,8 +14,8 @@ class TestRemoteOperationResponse(unittest.TestCase):
 
     def test_from_text(self) -> None:
         """Test the from_text method."""
-        response_text = remote_operation_response_test
-        response = RemoteOperationResponse.from_text(response_text)
+        loaded = json.loads(json.dumps(sample_remote_operaton_response))
+        response = RemoteOperationResponse(**loaded)
         self.assertEqual(
             response.event_id, UUID("59668d8a-6426-4691-b61b-3c87d206d3f9")
         )

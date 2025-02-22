@@ -17,8 +17,3 @@ class RemoteOperationResponse(BaseModel):
     vin: str
     state: str
     status: str
-
-    @staticmethod
-    def from_text(response_text: str) -> RemoteOperationResponse:
-        """Parse text to the object."""
-        return RemoteOperationResponse.model_validate_json(response_text)

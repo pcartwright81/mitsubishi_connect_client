@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 
 from mitsubishi_connect_client.vehicle_state import VehicleState
 
-from . import test_vehicle_state_response
+from . import sample_vehicle_state
 
 
 class TestVehicleState(unittest.TestCase):
@@ -13,9 +13,7 @@ class TestVehicleState(unittest.TestCase):
 
     def test_vehiclestate_from_text(self) -> None:
         """Test VehicleState.from_text."""
-        response_text = test_vehicle_state_response
-
-        vehicle_state = VehicleState.from_text(response_text)
+        vehicle_state = VehicleState(**sample_vehicle_state)
 
         self.assertEqual(vehicle_state.vin, "1234567890ABCDEFG")
         self.assertEqual(
