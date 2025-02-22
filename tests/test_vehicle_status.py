@@ -28,7 +28,7 @@ class TestVehicleState(unittest.TestCase):
             "cruisingRangeCombined": "200",
             "eventTimestamp": "2023-03-15T13:20:00Z",
         }
-        charging_control = ChargingControl(**data) # type: ignore This is a unit test.
+        charging_control = ChargingControl(**data)  # type: ignore This is a unit test.
         self.assertEqual(charging_control.cruising_range_combined, "200")
         self.assertEqual(
             charging_control.event_timestamp, datetime(2023, 3, 15, 13, 20, tzinfo=UTC)

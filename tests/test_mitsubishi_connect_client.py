@@ -167,8 +167,7 @@ class TestMitsubishiConnectClient(unittest.IsolatedAsyncioTestCase):
         mock_response.ok = False
         mock_response.status = 400
         with pytest.raises(Exception):  # noqa: B017, PT011
-             await self._client.get_status("test_vin")
-
+            await self._client.get_status("test_vin")
 
     def test_generate_client_nonce_base64(self) -> None:
         """Test the generate_client_nonce_base64 function."""
