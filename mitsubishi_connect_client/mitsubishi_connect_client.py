@@ -5,25 +5,35 @@ import hashlib
 import hmac
 import json
 import os
-from typing import ClassVar
+from typing import Any, ClassVar
 
-import aiohttp
+import async_timeout
+from aiohttp import ClientSession
 
 from mitsubishi_connect_client.remote_operation_response import RemoteOperationResponse
+from mitsubishi_connect_client.token_state import TokenState
 from mitsubishi_connect_client.vehicle import VechiclesResponse
 from mitsubishi_connect_client.vehicle_state import VehicleState
+from mitsubishi_connect_client.vehicle_status import (
+    VehicleStatusResponse,
+    VhrItem,
+)
 
 
 class MitsubishiConnectClient:
     """Define the Mitsubishi Connect Client."""
 
-    def __init__(self, base_url: str | None = None) -> None:
-        """Create and instance of the client."""
+    def __init__(
+        self,
+        user_name: str,
+        password: str,
+    ) -> None:
+        """Initialize the client."""
+        self._user_name = user_name
+        self._password = password
         self._base_url = "https://us-m.aerpf.com"
-        if base_url is not None:
-            self._base_url = base_url
 
-    token: dict
+    token: TokenState
 
     headers: ClassVar[dict[str, str]] = {
         "content-type": "application/json; charset=UTF-8",
@@ -35,100 +45,97 @@ class MitsubishiConnectClient:
         "accept-encoding": "gzip",
     }
 
-    async def login(self, user_name: str, password: str) -> None:
+    async def login(self) -> None:
         """Login to the api."""
         url = f"{self._base_url}/auth/v1/token"
-        data = (
-            '{"grant_type":"password","username":"'
-            + user_name
-            + '","password":"'
-            + password
-            + '"}'
+        data = {
+            "grant_type": "password",
+            "username": f"{self._user_name.strip()}",
+            "password": f"{self._password.strip()}",
+        }
+        response = await self._api_wrapper(
+            method="post",
+            url=url,
+            data=data,
+            headers=self.headers,
         )
+        self.token = TokenState(**response)
 
-        async with (
-            aiohttp.ClientSession() as session,
-            session.post(url, data=data, headers=self.headers) as response,
-        ):
-            response_text = await response.text()
-            self.token = json.loads(response_text)
+    async def refresh_token(self) -> None:
+        """Login to the api."""
+        url = f"{self._base_url}/auth/v1/token"
+        data = {
+            "grant_type": "refresh_token",
+            "refresh_token": f"{self.token.refresh_token}",
+        }
+        response = await self._api_wrapper(
+            method="post",
+            url=url,
+            data=data,
+            headers=self.headers,
+        )
+        self.token = TokenState(**response)
 
     async def get_vehicles(self) -> VechiclesResponse:
         """Get the vehicles on the account."""
-        url = f"{self._base_url}/user/v1/users/{self.token['accountDN']}/vehicles"
-        self.headers["authorization"] = "Bearer " + self.token["access_token"]
-        async with (
-            aiohttp.ClientSession() as session,
-            session.get(url, headers=self.headers) as response,
-        ):
-            response_text = await response.text()
-            return VechiclesResponse.from_text(response_text)
+        url = f"{self._base_url}/user/v1/users/{self.token.account_dn}/vehicles"
+        self.headers["authorization"] = "Bearer " + self.token.access_token
+        response = await self._api_wrapper(
+            method="get",
+            url=url,
+            headers=self.headers,
+        )
+        return VechiclesResponse(**response)
 
     async def get_vehicle_state(self, vin: str) -> VehicleState:
         """Get the vehicle state."""
         url = f"{self._base_url}/avi/v1/vehicles/{vin}/vehiclestate"
-        self.headers["authorization"] = "Bearer " + self.token["access_token"]
-        async with (
-            aiohttp.ClientSession() as session,
-            session.get(url, headers=self.headers) as response,
-        ):
-            response_text = await response.text()
-            return VehicleState.from_text(response_text)
+        self.headers["authorization"] = "Bearer " + self.token.access_token
+        response = await self._api_wrapper(
+            method="get",
+            url=url,
+            headers=self.headers,
+        )
+        return VehicleState(**response)
+
+    def _get_bytes(self, data: dict[str, str]) -> bytes:
+        """Get the bytes."""
+        return json.dumps(data).replace(" ", "").encode("utf-8")
+
+    async def _remote_operation_response(
+        self, vin: str, operation: str
+    ) -> RemoteOperationResponse:
+        """Remote operation response."""
+        url = f"{self._base_url}:15443/avi/v3/remoteOperation"
+        data = {
+            "vin": f"{vin}",
+            "operation": f"{operation}",
+            "forced": "true",
+            "userAgent": "android",
+        }
+        headers = self._add_headers(self.headers, data)
+        response = await self._api_wrapper(
+            method="post",
+            url=url,
+            data_bytes=self._get_bytes(data),
+            headers=headers,
+        )
+        return RemoteOperationResponse(**response)
 
     async def stop_engine(self, vin: str) -> RemoteOperationResponse:
         """Stop the engine."""
-        url = f"{self._base_url}:15443/avi/v3/remoteOperation"
-        data = {
-            "vin": f"{vin}",
-            "operation": "engineOff",
-            "forced": "true",
-            "userAgent": "android",
-        }
-        headers = self.headers
-        json_bytes = self.add_headers_and_get_bytes(headers, data)
-        async with (
-            aiohttp.ClientSession() as session,
-            session.post(url, data=json_bytes, headers=self.headers) as response,
-        ):
-            response_text = await response.text()
-            return RemoteOperationResponse.from_text(response_text)
+        operation = "engineOff"
+        return await self._remote_operation_response(vin, operation)
 
     async def flash_lights(self, vin: str) -> RemoteOperationResponse:
         """Flash the lights."""
-        url = f"{self._base_url}:15443/avi/v3/remoteOperation"
-        data = {
-            "vin": f"{vin}",
-            "operation": "lights",
-            "forced": "true",
-            "userAgent": "android",
-        }
-        headers = self.headers
-        json_bytes = self.add_headers_and_get_bytes(headers, data)
-        async with (
-            aiohttp.ClientSession() as session,
-            session.post(url, data=json_bytes, headers=headers) as response,
-        ):
-            response_text = await response.text()
-            return RemoteOperationResponse.from_text(response_text)
+        operation = "lights"
+        return await self._remote_operation_response(vin, operation)
 
     async def start_engine(self, vin: str) -> RemoteOperationResponse:
         """Start the engine."""
-        url = f"{self._base_url}:15443/avi/v3/remoteOperation"
-        data = {
-            "vin": f"{vin}",
-            "operation": "remoteAC",
-            "forced": "true",
-            "dt": {"pos": 1, "def": 0, "tmp": 1},
-            "userAgent": "android",
-        }
-        headers = self.headers
-        json_bytes = self.add_headers_and_get_bytes(headers, data)
-        async with (
-            aiohttp.ClientSession() as session,
-            session.post(url, data=json_bytes, headers=headers) as response,
-        ):
-            response_text = await response.text()
-            return RemoteOperationResponse.from_text(response_text)
+        operation = "remoteAC"
+        return await self._remote_operation_response(vin, operation)
 
     async def unlock_vehicle(self, vin: str, pin_token: str) -> RemoteOperationResponse:
         """Unlock the vehicle."""
@@ -140,75 +147,110 @@ class MitsubishiConnectClient:
             "pinToken": f"{pin_token}",
             "userAgent": "android",
         }
-        headers = self.headers
-        json_bytes = self.add_headers_and_get_bytes(headers, data)
-        async with (
-            aiohttp.ClientSession() as session,
-            session.post(url, data=json_bytes, headers=headers) as response,
-        ):
-            response_text = await response.text()
-            return RemoteOperationResponse.from_text(response_text)
+        headers = self._add_headers(self.headers, data)
+        response = await self._api_wrapper(
+            method="post",
+            url=url,
+            data_bytes=self._get_bytes(data),
+            headers=headers,
+        )
+        return RemoteOperationResponse(**response)
 
     async def get_nonce(self, vin: str) -> dict[str, str]:
         """Get the server nonce."""
         url = f"{self._base_url}:15443/oauth/v3/remoteOperation"
-        client_nonce = self.generate_client_nonce_base64()
+        client_nonce = self._generate_client_nonce_base64()
         data = {
             "vin": f"{vin}",
             "clientNonce": f"{client_nonce}",
         }
-        headers = self.headers
-        json_bytes = self.add_headers_and_get_bytes(headers, data)
-        async with (
-            aiohttp.ClientSession() as session,
-            session.post(url, data=json_bytes, headers=headers) as response,
-        ):
-            response_text = await response.text()
-            nonce_response = json.loads(response_text)
-            return {
-                "clientNonce": client_nonce,
-                "serverNonce": nonce_response["serverNonce"],
-            }
+        headers = self._add_headers(self.headers, data)
+        response = await self._api_wrapper(
+            method="post",
+            url=url,
+            data_bytes=self._get_bytes(data),
+            headers=headers,
+        )
+        return {
+            "clientNonce": client_nonce,
+            "serverNonce": response["serverNonce"],
+        }
 
     async def get_pin_token(self, vin: str, pin: str) -> str:
         """Get the pin token."""
         nonce = await self.get_nonce(vin)
         client_nonce = nonce["clientNonce"]
         server_nonce = nonce["serverNonce"]
-        generated_hash = self.generate_hash(client_nonce, server_nonce, pin)
+        generated_hash = self._generate_hash(client_nonce, server_nonce, pin)
         url = f"{self._base_url}:15443/oauth/v3/remoteOperation/pin"
-        client_nonce = self.generate_client_nonce_base64()
+        client_nonce = self._generate_client_nonce_base64()
         data = {
             "vin": f"{vin}",
             "hash": f"{generated_hash}",
             "userAgent": "android",
         }
-        headers = self.headers
-        json_bytes = self.add_headers_and_get_bytes(headers, data)
-        async with (
-            aiohttp.ClientSession() as session,
-            session.post(url, data=json_bytes, headers=headers) as response,
-        ):
-            response_text = await response.text()
-            pin_response = json.loads(response_text)
-            return pin_response["pinToken"]
+        headers = self._add_headers(self.headers, data)
+        response = await self._api_wrapper(
+            method="post",
+            url=url,
+            data_bytes=self._get_bytes(data),
+            headers=headers,
+        )
+        return response["pinToken"]
 
-    def add_headers_and_get_bytes(
+    async def get_status(self, vin: str) -> VhrItem:
+        """Get the vehicle status."""
+        url = f"{self._base_url}:15443/avi/v1/vehicles/{vin}/vehicleStatus?count=1"
+        self.headers["authorization"] = "Bearer " + self.token.access_token
+        response = await self._api_wrapper(
+            method="get",
+            url=url,
+            headers=self.headers,
+        )
+        return VehicleStatusResponse(**response).vhr[0]
+
+    def _add_headers(
         self, headers: dict[str, str], data: dict[str, str]
-    ) -> bytes:
+    ) -> dict[str, str]:
         """Add headers to the request."""
-        headers["authorization"] = "Bearer " + self.token["access_token"]
-        json_bytes = json.dumps(data).replace(" ", "").encode("utf-8")
-        length = len(json_bytes)
+        headers["authorization"] = "Bearer " + self.token.access_token
+        data_bytes = self._get_bytes(data)
+        length = len(data_bytes)
         headers["content-length"] = str(length)
-        return json_bytes
+        return headers
 
-    def generate_client_nonce_base64(self, length: int = 32) -> str:
+    async def _api_wrapper(
+        self,
+        method: str,
+        url: str,
+        headers: dict | None = None,
+        data: Any | None = None,
+        data_bytes: bytes | None = None,
+    ) -> Any:
+        """Get information from the API."""
+        async with (
+            async_timeout.timeout(10),
+            ClientSession() as session,
+            session.request(
+                method=method,
+                url=url,
+                headers=headers,
+                json=data,
+                data=data_bytes,
+            ) as response,
+        ):
+            if response.ok:
+                text = await response.text()
+                return json.loads(text)
+            response.raise_for_status()
+            return None
+
+    def _generate_client_nonce_base64(self, length: int = 32) -> str:
         """Generate a random nonce and encodes it in Base64."""
         random_bytes = os.urandom(length)  # Generate random bytes
         return base64.b64encode(random_bytes).decode("utf-8")
 
-    def generate_hash(
+    def _generate_hash(
         self, client_nonce: str, server_nonce: str, pin: str
     ) -> str | None:
         """Generate a custom hash based on client nonce, server nonce, and pin."""

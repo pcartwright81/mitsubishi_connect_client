@@ -4,3 +4,4 @@ ruff==0.9.7
 aiohttp==3.11.12
 python-dateutil==2.9.0.post0
 pydantic==2.10.6
+async-timeout==5.0.1

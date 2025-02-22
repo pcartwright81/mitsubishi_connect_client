@@ -18,7 +18,7 @@ class ExtLocMap(BaseModel):
 class ChargingControl(BaseModel):
     """Define a charging control object."""
 
-    cruising_range_combined: int = Field(..., alias="cruisingRangeCombined")
+    cruising_range_combined: str = Field(..., alias="cruisingRangeCombined")
     event_timestamp: datetime = Field(..., alias="eventTimestamp")
 
 
@@ -39,7 +39,7 @@ class State(BaseModel):
     temp: str
     factory_reset: bool = Field(..., alias="factoryReset")
     tu_state_ts: datetime = Field(..., alias="tuStateTS")
-    ignition_state_ts: datetime = Field(..., alias="ignitionStateTs")
+    ignition_state_ts: datetime | None = Field(None, alias="ignitionStateTs")
     timezone: str
     accessible: bool
     charging_control: ChargingControl = Field(..., alias="chargingControl")
@@ -51,8 +51,3 @@ class VehicleState(BaseModel):
     vin: str
     ts: datetime
     state: State
-
-    @staticmethod
-    def from_text(response_text: str) -> VehicleState:
-        """Parse text to the object."""
-        return VehicleState.model_validate_json(response_text)

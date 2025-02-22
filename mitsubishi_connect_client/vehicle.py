@@ -31,8 +31,3 @@ class VechiclesResponse(BaseModel):
     """Define a vehicles response object."""
 
     vehicles: list[Vehicle]
-
-    @staticmethod
-    def from_text(response_text: str) -> VechiclesResponse:
-        """Parse text to the object."""
-        return VechiclesResponse.model_validate_json(response_text)

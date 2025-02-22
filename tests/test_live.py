@@ -12,19 +12,24 @@ from mitsubishi_connect_client.vehicle_state import VehicleState
 @pytest.mark.skip(reason="Live testing disabled.")
 async def test_async() -> None:
     """Run a test against the live api."""
-    client = MitsubishiConnectClient()
-    username = os.environ["MITSUBISHI_USERNAME"]
-    password = os.environ["MITSUBISHI_PASSWORD"]
-    pin = os.environ["MITSUBISHI_PIN"]
-    await client.login(username.strip(), password.strip())
-    assert client.token["access_token"] is not None
+    _username = os.environ["MITSUBISHI_USERNAME"]
+    _password = os.environ["MITSUBISHI_PASSWORD"]
+    _client = MitsubishiConnectClient(_username, _password)
 
-    vehicles_response = await client.get_vehicles()
+    pin = os.environ["MITSUBISHI_PIN"]
+    await _client.login()
+    assert _client.token is not None
+
+    vehicles_response = await _client.get_vehicles()
     assert len(vehicles_response.vehicles) > 0
 
-    vehicle_state = await client.get_vehicle_state(vehicles_response.vehicles[0].vin)
+    vehicle_state = await _client.get_vehicle_state(vehicles_response.vehicles[0].vin)
     assert isinstance(vehicle_state, VehicleState)
 
-    pin_token = await client.get_pin_token(vehicles_response.vehicles[0].vin, pin)
-    response = await client.unlock_vehicle(vehicles_response.vehicles[0].vin, pin_token)
+    pin_token = await _client.get_pin_token(vehicles_response.vehicles[0].vin, pin)
+    assert isinstance(pin_token, str)
+
+    response = await _client.unlock_vehicle(
+        vehicles_response.vehicles[0].vin, pin_token
+    )
     assert isinstance(response, RemoteOperationResponse)
