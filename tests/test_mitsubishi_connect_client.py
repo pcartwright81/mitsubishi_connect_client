@@ -44,6 +44,7 @@ class TestMitsubishiConnectClient(unittest.IsolatedAsyncioTestCase):
         mock_post.return_value.__aenter__.return_value = mock_response
         await self._client.login()
         assert self._client.token == self._token
+        assert self._client.token.access_token != self._client.token.refresh_token
 
     @patch("aiohttp.ClientSession.request")
     async def test_refresh_token(self, mock_post: MagicMock) -> None:
