@@ -22,13 +22,6 @@ async def test_async() -> None:
     assert _client.token.access_token != _client.token.refresh_token
     orig_token = _client.token
 
-
-    await _client.refresh_token()
-    assert _client.token is not None
-    assert orig_token != _client.token
-    assert orig_token.access_token != _client.token.access_token
-    assert orig_token.refresh_token != _client.token.refresh_token
-
     vehicles_response = await _client.get_vehicles()
     assert len(vehicles_response.vehicles) > 0
 
@@ -38,7 +31,11 @@ async def test_async() -> None:
     pin_token = await _client.get_pin_token(vehicles_response.vehicles[0].vin, pin)
     assert isinstance(pin_token, str)
 
-    response = await _client.unlock_vehicle(
-        vehicles_response.vehicles[0].vin, pin_token
-    )
+    response = await _client.flash_lights(vehicles_response.vehicles[0].vin)
     assert isinstance(response, RemoteOperationResponse)
+
+    await _client.refresh_token()
+    assert _client.token is not None
+    assert orig_token != _client.token
+    assert orig_token.access_token != _client.token.access_token
+    assert orig_token.refresh_token != _client.token.refresh_token

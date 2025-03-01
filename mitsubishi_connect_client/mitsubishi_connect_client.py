@@ -35,7 +35,7 @@ class MitsubishiConnectClient:
 
     token: TokenState
 
-    headers: ClassVar[dict[str, str]] = {
+    _headers: ClassVar[dict[str, str]] = {
         "content-type": "application/json; charset=UTF-8",
         "user-agent": "Mobile",
         "x-client-id": "mobile",
@@ -53,11 +53,12 @@ class MitsubishiConnectClient:
             "username": f"{self._user_name.strip()}",
             "password": f"{self._password.strip()}",
         }
+        headers = self._get_headers()
         response = await self._api_wrapper(
             method="post",
             url=url,
             data=data,
-            headers=self.headers,
+            headers=headers,
         )
         self.token = TokenState(**response)
 
@@ -68,33 +69,36 @@ class MitsubishiConnectClient:
             "grant_type": "refresh_token",
             "refresh_token": f"{self.token.refresh_token}",
         }
+        headers = self._get_headers()
         response = await self._api_wrapper(
             method="post",
             url=url,
             data=data,
-            headers=self.headers,
+            headers=headers,
         )
         self.token = TokenState(**response)
 
     async def get_vehicles(self) -> VechiclesResponse:
         """Get the vehicles on the account."""
         url = f"{self._base_url}/user/v1/users/{self.token.account_dn}/vehicles"
-        self.headers["authorization"] = "Bearer " + self.token.access_token
+        headers = self._get_headers()
+        self._add_auth_header(headers)
         response = await self._api_wrapper(
             method="get",
             url=url,
-            headers=self.headers,
+            headers=headers,
         )
         return VechiclesResponse(**response)
 
     async def get_vehicle_state(self, vin: str) -> VehicleState:
         """Get the vehicle state."""
         url = f"{self._base_url}/avi/v1/vehicles/{vin}/vehiclestate"
-        self.headers["authorization"] = "Bearer " + self.token.access_token
+        headers = self._get_headers()
+        self._add_auth_header(headers)
         response = await self._api_wrapper(
             method="get",
             url=url,
-            headers=self.headers,
+            headers=headers,
         )
         return VehicleState(**response)
 
@@ -113,7 +117,9 @@ class MitsubishiConnectClient:
             "forced": "true",
             "userAgent": "android",
         }
-        headers = self._add_headers(self.headers, data)
+        headers = self._get_headers()
+        self._add_auth_header(headers)
+        self._add_length_header(headers, data)
         response = await self._api_wrapper(
             method="post",
             url=url,
@@ -147,7 +153,9 @@ class MitsubishiConnectClient:
             "pinToken": f"{pin_token}",
             "userAgent": "android",
         }
-        headers = self._add_headers(self.headers, data)
+        headers = self._get_headers()
+        self._add_auth_header(headers)
+        self._add_length_header(headers, data)
         response = await self._api_wrapper(
             method="post",
             url=url,
@@ -164,7 +172,9 @@ class MitsubishiConnectClient:
             "vin": f"{vin}",
             "clientNonce": f"{client_nonce}",
         }
-        headers = self._add_headers(self.headers, data)
+        headers = self._get_headers()
+        self._add_auth_header(headers)
+        self._add_length_header(headers, data)
         response = await self._api_wrapper(
             method="post",
             url=url,
@@ -189,7 +199,9 @@ class MitsubishiConnectClient:
             "hash": f"{generated_hash}",
             "userAgent": "android",
         }
-        headers = self._add_headers(self.headers, data)
+        headers = self._get_headers()
+        self._add_auth_header(headers)
+        self._add_length_header(headers, data)
         response = await self._api_wrapper(
             method="post",
             url=url,
@@ -201,23 +213,28 @@ class MitsubishiConnectClient:
     async def get_status(self, vin: str) -> VhrItem:
         """Get the vehicle status."""
         url = f"{self._base_url}:15443/avi/v1/vehicles/{vin}/vehicleStatus?count=1"
-        self.headers["authorization"] = "Bearer " + self.token.access_token
+        headers = self._get_headers()
+        self._add_auth_header(headers)
         response = await self._api_wrapper(
             method="get",
             url=url,
-            headers=self.headers,
+            headers=headers,
         )
         return VehicleStatusResponse(**response).vhr[0]
 
-    def _add_headers(
-        self, headers: dict[str, str], data: dict[str, str]
-    ) -> dict[str, str]:
-        """Add headers to the request."""
+    def _add_auth_header(self, headers: dict[str, str]) -> None:
+        """Add the auth header."""
         headers["authorization"] = "Bearer " + self.token.access_token
+
+    def _add_length_header(self, headers: dict[str, str], data: dict[str, str]) -> None:
+        """Add headers to the request."""
         data_bytes = self._get_bytes(data)
         length = len(data_bytes)
         headers["content-length"] = str(length)
-        return headers
+
+    def _get_headers(self) -> dict[str, str]:
+        """Get the headers."""
+        return self._headers.copy()
 
     async def _api_wrapper(
         self,
