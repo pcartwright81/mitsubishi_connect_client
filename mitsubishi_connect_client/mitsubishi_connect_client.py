@@ -5,7 +5,7 @@ import hashlib
 import hmac
 import json
 import os
-from typing import Any, ClassVar
+from typing import Any
 
 import async_timeout
 from aiohttp import ClientSession
@@ -34,16 +34,6 @@ class MitsubishiConnectClient:
         self._base_url = "https://us-m.aerpf.com"
 
     token: TokenState
-
-    _headers: ClassVar[dict[str, str]] = {
-        "content-type": "application/json; charset=UTF-8",
-        "user-agent": "Mobile",
-        "x-client-id": "mobile",
-        "ampapikey": "3f5547161b5d4bdbbb2bf8b26c69d1de",
-        "host": "us-m.aerpf.com:15443",
-        "connection": "Keep-Alive",
-        "accept-encoding": "gzip",
-    }
 
     async def login(self) -> None:
         """Login to the api."""
@@ -234,13 +224,21 @@ class MitsubishiConnectClient:
 
     def _get_headers(self) -> dict[str, str]:
         """Get the headers."""
-        return self._headers.copy()
+        return {
+            "content-type": "application/json; charset=UTF-8",
+            "user-agent": "Mobile",
+            "x-client-id": "mobile",
+            "ampapikey": "3f5547161b5d4bdbbb2bf8b26c69d1de",
+            "host": "us-m.aerpf.com:15443",
+            "connection": "Keep-Alive",
+            "accept-encoding": "gzip",
+        }
 
     async def _api_wrapper(
         self,
         method: str,
         url: str,
-        headers: dict | None = None,
+        headers: dict,
         data: Any | None = None,
         data_bytes: bytes | None = None,
     ) -> Any:
