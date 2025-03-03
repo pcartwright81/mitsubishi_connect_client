@@ -44,6 +44,7 @@ class MitsubishiConnectClient:
             "password": f"{self._password.strip()}",
         }
         headers = self._get_headers()
+        self._add_basic_auth_header(headers)
         response = await self._api_wrapper(
             method="post",
             url=url,
@@ -60,6 +61,7 @@ class MitsubishiConnectClient:
             "refresh_token": f"{self.token.refresh_token}",
         }
         headers = self._get_headers()
+        self._add_basic_auth_header(headers)
         response = await self._api_wrapper(
             method="post",
             url=url,
@@ -215,6 +217,12 @@ class MitsubishiConnectClient:
     def _add_auth_header(self, headers: dict[str, str]) -> None:
         """Add the auth header."""
         headers["authorization"] = "Bearer " + self.token.access_token
+
+    def _add_basic_auth_header(self, headers: dict[str, str]) -> None:
+        """Add the basic auth header."""
+        headers["authorization"] = (
+            "Basic ZTU4NjUzY2QtMzkxOS00MjYxLWE1N2UtNWYyZjdjMjAwMGRhOmFtcENsaWVudFRydXN0ZWRTZWNyZXQ="  # noqa: E501
+        )
 
     def _add_length_header(self, headers: dict[str, str], data: dict[str, str]) -> None:
         """Add headers to the request."""
