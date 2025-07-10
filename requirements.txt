@@ -1,7 +1,7 @@
 colorlog==6.9.0
 pip>=21.3.1
 ruff==0.12.2
-aiohttp==3.12.13
+aiohttp==3.12.14
 python-dateutil==2.9.0.post0
 pydantic==2.11.7
 async-timeout==5.0.1
