@@ -9,7 +9,7 @@ with Path("README.md").open() as fh:
 
 setuptools.setup(
     name="mitsubishi_connect_client",
-    version="0.0.6",
+    version="0.0.7",
     author="Patrick Cartwright",
     author_email="pcartwright1981@gmail.com",
     description="Client for the Mitsubishi Connect API",
@@ -23,3 +23,4 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
 )
+
