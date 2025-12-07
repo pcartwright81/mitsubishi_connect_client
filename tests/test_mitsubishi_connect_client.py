@@ -20,6 +20,26 @@ from . import (
 class TestMitsubishiConnectClient(unittest.IsolatedAsyncioTestCase):
     """Test the mitsubishi connect client."""
 
+    def test_init_us_region(self) -> None:
+        """Test client initialization with US region."""
+        client = MitsubishiConnectClient("user", "pass", "US")
+        self.assertEqual(client._base_url, "https://us-m.aerpf.com")
+        self.assertEqual(client._region, "US")
+
+    def test_init_eu_region(self) -> None:
+        """Test client initialization with EU region."""
+        client = MitsubishiConnectClient("user", "pass", "EU")
+        self.assertEqual(client._base_url, "https://eu-m.aerpf.com")
+        self.assertEqual(client._region, "EU")
+
+    def test_init_default_region(self) -> None:
+        """Test client initialization with default region."""
+        client = MitsubishiConnectClient("user", "pass")
+        self.assertEqual(client._base_url, "https://us-m.aerpf.com")
+        self.assertEqual(client._region, "US")
+
+    # The rest of the tests are async, so they need the async setup
+
     async def asyncSetUp(self) -> None:
         """Set up the test."""
         _client = MitsubishiConnectClient("username", "password")
@@ -184,3 +204,32 @@ class TestMitsubishiConnectClient(unittest.IsolatedAsyncioTestCase):
         pin = "1234"
         hash_value = self._client._generate_hash(client_nonce, server_nonce, pin)
         assert isinstance(hash_value, str)
+
+    @patch("aiohttp.ClientSession.request")
+    async def test_get_headers_eu_region(self, mock_request: MagicMock) -> None:
+        """Test the host header is set correctly for the EU region."""
+        client = MitsubishiConnectClient("user", "pass", "EU")
+        client.token = self._token
+
+        mock_response = AsyncMock()
+        mock_response.text.return_value = json.dumps(sample_vehicle)
+        mock_request.return_value.__aenter__.return_value = mock_response
+
+        await client.get_vehicles()
+
+        _, call_kwargs = mock_request.call_args
+        self.assertEqual(call_kwargs["headers"]["host"], "eu-m.aerpf.com:15443")
+
+    @patch("aiohttp.ClientSession.request")
+    async def test_get_headers_us_region(self, mock_request: MagicMock) -> None:
+        """Test the host header is set correctly for the US region."""
+        client = MitsubishiConnectClient("user", "pass", "US")
+        client.token = self._token
+
+        mock_response = AsyncMock()
+        mock_response.text.return_value = json.dumps(sample_vehicle)
+        mock_request.return_value.__aenter__.return_value = mock_response
+
+        await client.get_vehicles()
+        _, call_kwargs = mock_request.call_args
+        self.assertEqual(call_kwargs["headers"]["host"], "us-m.aerpf.com:15443")

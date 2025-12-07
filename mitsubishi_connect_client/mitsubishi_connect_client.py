@@ -27,11 +27,26 @@ class MitsubishiConnectClient:
         self,
         user_name: str,
         password: str,
+        region: str = "US",
     ) -> None:
-        """Initialize the client."""
+        """
+        Initialize the client.
+
+        Args:
+            user_name: Mitsubishi Connect username
+            password: Mitsubishi Connect password
+            region: Region code (US or EU), defaults to US
+
+        """
         self._user_name = user_name
         self._password = password
-        self._base_url = "https://us-m.aerpf.com"
+        self._region = region.upper()
+
+        # Select base URL based on region
+        if self._region == "EU":
+            self._base_url = "https://eu-m.aerpf.com"
+        else:
+            self._base_url = "https://us-m.aerpf.com"
 
     token: TokenState
 
@@ -232,12 +247,18 @@ class MitsubishiConnectClient:
 
     def _get_headers(self) -> dict[str, str]:
         """Get the headers."""
+        # Select host based on region
+        if self._region == "EU":
+            host = "eu-m.aerpf.com:15443"
+        else:
+            host = "us-m.aerpf.com:15443"
+
         return {
             "content-type": "application/json; charset=UTF-8",
             "user-agent": "Mobile",
             "x-client-id": "mobile",
             "ampapikey": "3f5547161b5d4bdbbb2bf8b26c69d1de",
-            "host": "us-m.aerpf.com:15443",
+            "host": host,
             "connection": "Keep-Alive",
             "accept-encoding": "gzip",
         }
