@@ -29,17 +29,19 @@ class MitsubishiConnectClient:
         password: str,
         region: str = "US",
     ) -> None:
-        """Initialize the client.
-        
+        """
+        Initialize the client.
+
         Args:
             user_name: Mitsubishi Connect username
             password: Mitsubishi Connect password
             region: Region code (US or EU), defaults to US
+
         """
         self._user_name = user_name
         self._password = password
         self._region = region.upper()
-        
+
         # Select base URL based on region
         if self._region == "EU":
             self._base_url = "https://eu-m.aerpf.com"
@@ -250,7 +252,7 @@ class MitsubishiConnectClient:
             host = "eu-m.aerpf.com:15443"
         else:
             host = "us-m.aerpf.com:15443"
-        
+
         return {
             "content-type": "application/json; charset=UTF-8",
             "user-agent": "Mobile",
