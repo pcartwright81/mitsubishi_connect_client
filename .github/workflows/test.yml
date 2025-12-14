@@ -18,7 +18,7 @@ jobs:
     name: Run tests
     steps:
       - name: Check out code from GitHub
-        uses: "actions/checkout@v6.0.0"
+        uses: "actions/checkout@v6.0.1"
       - name: Setup Python ${{ env.DEFAULT_PYTHON }}
         uses: "actions/setup-python@v6.1.0"
         with:
@@ -30,7 +30,7 @@ jobs:
       - name: Tests suite
         run: pytest -p no:sugar
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5.5.1
+        uses: codecov/codecov-action@v5.5.2
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           env_vars: OS,PYTHON
